@@ -3,6 +3,7 @@
 
 #include "bof.h"
 #include "ast.h"
+#include "literal_table.h"
 
 // Initialize the code generator
 extern void gen_code_initialize();

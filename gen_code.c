@@ -3,7 +3,7 @@
 // Initialize the code generator
 extern void gen_code_initialize()
 {
-
+    literal_table_initialize();
 }
 
 // Requires: bf is open for writing
