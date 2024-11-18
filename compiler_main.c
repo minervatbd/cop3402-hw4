@@ -11,17 +11,7 @@
 #include "symtab.h"
 #include "scope_check.h"
 
-// The functions gen_code_initialize and gen_code_program
-// would normally be declared in gen_code.h,
-// but part of the homework is to write that gen_code module,
-// so they are declared below to make this file self-contained.
-
-// Initialize the code generator
-extern void gen_code_initialize();
-
-// Requires: bf is open for writing
-// Generate code for prog into bf
-extern void gen_code_program(BOFFILE bf, block_t prog);
+#include "gen_code.h"
 
 /* Print a usage message on stderr 
    and exit with failure. */
