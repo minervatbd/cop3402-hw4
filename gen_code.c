@@ -24,7 +24,10 @@ void gen_code_program(BOFFILE bf, block_t prog)
 
 code_seq gen_code_block(block_t block){
     code_seq ret;
+//generate code from var decls
     code_seq_concat(&ret, gen_code_varDecls(block.var_decls));
+//same but for proc decls
+    code_seq_concat(&ret, gen_code_proc(block.proc_decls));
 
 //if statements exist within block, recursively parse stmts ast into code
     if(block.stmts.stmts_kind != empty_stmts_e){
@@ -63,7 +66,7 @@ code_seq gen_code_identList(ident_list_t idList){
     return ret;
 }
 
-code_seq gen_code_proc(proc_decl_t procedures){
+code_seq gen_code_proc(proc_decls_t procedures){
 //Todo
 }
 
