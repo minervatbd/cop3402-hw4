@@ -63,13 +63,40 @@ extern int literal_table_find_offset(const char *target, word_type value)
     return -1;
 }
 
-extern int literal_table_present(const char *sought, word_type value)
+extern int literal_table_present(const char *target, word_type value)
 {
     literal_table_valid();
-    return literal_table_find_offset(sought, value) >= 0;
+    return literal_table_find_offset(target, value) >= 0;
 }
 
-extern unsigned int literal_table_lookup(const char *sought, word_type value)
+extern unsigned int literal_table_lookup(const char *target, word_type value)
 {
+    int res = literal_table_find_offset(target, value);
+    if (res != -1)
+        return res;
+    
+    literal *entry = (literal*) malloc(sizeof(literal));
 
+    if (entry == NULL)
+        bail_with_error("Couldn't allocate memory for literal table entry!");
+    
+    entry->next = NULL;
+    entry->value = value;
+    entry->text = target;
+    entry->offset = next_word_offset;
+
+    if (literal_table_empty())
+    {
+        first = entry;
+        last = entry;
+    }
+
+    else
+    {
+        last->next = entry;
+        last = entry;
+    }
+
+    literal_table_valid();
+    return next_word_offset++;
 }
