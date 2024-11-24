@@ -1,5 +1,7 @@
 #ifndef LITERAL_TABLE_H
 #define LITERAL_TABLE_H
+#include <stdlib.h>
+#include "utilities.h"
 #include "machine_types.h"
 
 extern void literal_table_initialize();
