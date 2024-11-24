@@ -59,13 +59,14 @@ extern int literal_table_find_offset(const char *target, word_type value)
             return entry->offset;
         entry = entry->next;
     }
-    
+
     return -1;
 }
 
 extern int literal_table_present(const char *sought, word_type value)
 {
-
+    literal_table_valid();
+    return literal_table_find_offset(sought, value) >= 0;
 }
 
 extern unsigned int literal_table_lookup(const char *sought, word_type value)
