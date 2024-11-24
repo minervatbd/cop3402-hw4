@@ -107,14 +107,25 @@ extern unsigned int literal_table_lookup(const char *target, word_type value)
 extern void literal_table_output(BOFFILE bof, int backwards)
 {
     literal_table_valid();
+    literal *entry;
+    literal *done_entry;
     
     if (!backwards)
-    {
-
-    }
-
+        entry = first;
     else
+        entry = last;
+    
+    while (entry != NULL)
     {
+        bof_write_word(bof, entry->value);
+
+        done_entry = entry;
+
+        if (!backwards)
+            entry = entry->next;
+        else
+            entry = entry->prev;
         
+        free(done_entry);
     }
 }
