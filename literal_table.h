@@ -1,6 +1,7 @@
 #ifndef LITERAL_TABLE_H
 #define LITERAL_TABLE_H
 #include <stdlib.h>
+#include "bof.h"
 #include "utilities.h"
 #include "machine_types.h"
 
@@ -17,5 +18,7 @@ extern int literal_table_find_offset(const char *target, word_type value);
 extern int literal_table_present(const char *sought, word_type value);
 
 extern unsigned int literal_table_lookup(const char *sought, word_type value);
+
+extern void literal_table_output(BOFFILE bof);
 
 #endif

@@ -100,3 +100,8 @@ extern unsigned int literal_table_lookup(const char *target, word_type value)
     literal_table_valid();
     return next_word_offset++;
 }
+
+extern void literal_table_output(BOFFILE bof)
+{
+    
+}
