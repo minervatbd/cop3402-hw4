@@ -115,4 +115,10 @@ extern void gen_code_final_output(code_seq* mainSeq){
 }
 
 
-
+// call this for literals at the end of the final output
+static void gen_code_output_literals(BOFFILE bof)
+{
+    // flip this bool for forwards/backwards output
+    int backwards = 0;
+    literal_table_output(bof, backwards);
+}
