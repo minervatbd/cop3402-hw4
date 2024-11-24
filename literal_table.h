@@ -19,6 +19,6 @@ extern int literal_table_present(const char *sought, word_type value);
 
 extern unsigned int literal_table_lookup(const char *sought, word_type value);
 
-extern void literal_table_output(BOFFILE bof);
+extern void literal_table_output(BOFFILE bof, int backwards);
 
 #endif

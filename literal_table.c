@@ -3,6 +3,7 @@
 typedef struct literal_table_entry
 {
     struct literal_table_entry *next;
+    struct literal_table_entry *prev;
     const char *text;
     word_type value;
     unsigned int offset;
@@ -81,6 +82,7 @@ extern unsigned int literal_table_lookup(const char *target, word_type value)
         bail_with_error("Couldn't allocate memory for literal table entry!");
     
     entry->next = NULL;
+    entry->prev = NULL;
     entry->value = value;
     entry->text = target;
     entry->offset = next_word_offset;
@@ -93,6 +95,7 @@ extern unsigned int literal_table_lookup(const char *target, word_type value)
 
     else
     {
+        entry->prev = last;
         last->next = entry;
         last = entry;
     }
@@ -101,7 +104,17 @@ extern unsigned int literal_table_lookup(const char *target, word_type value)
     return next_word_offset++;
 }
 
-extern void literal_table_output(BOFFILE bof)
+extern void literal_table_output(BOFFILE bof, int backwards)
 {
+    literal_table_valid();
     
+    if (!backwards)
+    {
+
+    }
+
+    else
+    {
+        
+    }
 }
