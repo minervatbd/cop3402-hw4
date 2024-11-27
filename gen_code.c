@@ -209,11 +209,15 @@ code_seq gen_code_ident(ident_t var, int sw){
 //store partial lexical addr (secondary) in $r7
     code_seq ret = code_utils_compute_fp(7, var.idu->levelsOutward);
     id_attrs* attrs;
+//check var exists
     assert((attrs = id_use_get_attrs(var.idu)) != NULL);
 
-//push corresponding value to the top of the stack
+//based on negative switch, push corresponding (+/-)value to the top of the stack
     unsigned int offset_count =attrs->offset_count;
     code_seq_concat(&ret, code_seq_singleton(code_lwi(SP, 0, 7, attrs->offset_count)));
+    if(!sw)
+        code_seq_concat(&ret, code_seq_singleton(code_neg(SP, 0, SP, 0)));
+
     return ret;
 }
 

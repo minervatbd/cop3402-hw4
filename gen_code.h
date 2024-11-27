@@ -30,7 +30,6 @@ extern code_seq gen_code_expr(expr_t expression);
 extern code_seq gen_code_binary_op_expr(binary_op_expr_t exp);
 extern code_seq gen_code_ident(ident_t id, int sw);
 extern code_seq gen_code_number(number_t num);
-extern code_seq gen_code_negated(negated_expr_t num);
 
 
 //ending functions
