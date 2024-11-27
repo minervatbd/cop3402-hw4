@@ -48,8 +48,6 @@ void gen_code_program(BOFFILE bf, block_t prog)
 //build code sequence recursively
     code_seq_concat(&mainSeq, gen_code_block(prog));
 
-//Todo: construct bof header from finished code sequence
-
 //output
     gen_code_final_output(bf, &mainSeq);
 }
@@ -115,15 +113,19 @@ code_seq gen_code_statement(stmt_t statement){
 //based on type of statement, peform the corresponding operations
     switch(statement.stmt_kind){
         case(assign_stmt):{
-        assign_stmt_t data = statement.data.assign_stmt;
-        //store partial lexical addr in $r3
-        ret = code_utils_compute_fp(3, data.idu->levelsOutward);
-        //evaultate expression and add to return seq
-        code_seq_concat(&ret, gen_code_expr(*data.expr));
+            assign_stmt_t data = statement.data.assign_stmt;
+        //store partial lexical addr in $r5
+            ret = code_utils_compute_fp(5, data.idu->levelsOutward);
+
+        //evaultate expression (storing value in $r6)
+            code_seq_concat(&ret, gen_code_expr(*data.expr));
+
+        //store val in corresponding spot in memory
+            code_seq_add_to_end(&ret, code_swr(5, data.idu->attrs->offset_count, 6));
         }
         
         case(call_stmt):{
-        //Todo: 
+        //Todo: (extra credit)
         }
 
         case(if_stmt):{
@@ -140,6 +142,7 @@ code_seq gen_code_statement(stmt_t statement){
         
         case(print_stmt):{
         //Todo:
+
         }
         
         case(block_stmt):{
@@ -149,6 +152,8 @@ code_seq gen_code_statement(stmt_t statement){
 
         default: bail_with_error("Non-statement AST was provided as a statement");
     }
+
+    return ret;
 }
 
 code_seq gen_code_expr(expr_t expression){
@@ -159,32 +164,57 @@ code_seq gen_code_expr(expr_t expression){
             //return gen_code_binary_op_expr(expression.data.binary);
             break;
         case(expr_negated):
-            //return gen_code_negated(expression.data.ident);
+            return gen_code_ident(expression.data.ident, 0);
 	        break; 
         
         case(expr_ident):
-            //return gen_code_ident(expression.data.ident);
+            return gen_code_ident(expression.data.ident, 1);
 	        break;           
         
         case(expr_number):
-            //return gen_code_number(exp.data.number);
+            return gen_code_number(expression.data.number);
 	        break;
         
         default:
             bail_with_error("Unexpected expr_kind_e (%d) in gen_code_expr", expression.expr_kind);
 	        break;
     }
-    return code_seq_empty();
+//pop value from top of stack and store in $r6
+    code_seq_concat(&ret, code_seq_singleton(code_lwr(6, SP, 0)));
+    code_seq_concat(&ret, code_utils_deallocate_stack_space(1));
+    return ret;
 }
 
 
 void gen_code_final_output(BOFFILE bf, code_seq* mainSeq)
 {
     BOFHeader bfh = gen_code_makeHeader(mainSeq);
+    //Todo: construct bof header from finished code sequence
     bof_write_header(bf, bfh);
     gen_code_output_seq(bf, *mainSeq);
     gen_code_output_literals(bf);
     bof_close(bf);
+}
+
+code_seq gen_code_number(number_t number){
+//store literal on top of stack
+    code_seq ret = code_utils_allocate_stack_space(1);
+    unsigned int offset = literal_table_lookup(number.text, number.value);
+
+    code_seq_concat(&ret, code_seq_singleton(code_lwi(SP, 0, GP, offset)));
+    return ret;
+}
+
+code_seq gen_code_ident(ident_t var, int sw){
+//store partial lexical addr (secondary) in $r7
+    code_seq ret = code_utils_compute_fp(7, var.idu->levelsOutward);
+    id_attrs* attrs;
+    assert((attrs = id_use_get_attrs(var.idu)) != NULL);
+
+//push corresponding value to the top of the stack
+    unsigned int offset_count =attrs->offset_count;
+    code_seq_concat(&ret, code_seq_singleton(code_lwi(SP, 0, 7, attrs->offset_count)));
+    return ret;
 }
 
 
