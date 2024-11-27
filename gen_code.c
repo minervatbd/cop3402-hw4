@@ -117,11 +117,13 @@ code_seq gen_code_statement(stmt_t statement){
         //store partial lexical addr in $r5
             ret = code_utils_compute_fp(5, data.idu->levelsOutward);
 
-        //evaultate expression (storing value in $r6)
+        //evaultate expression (storing value on top of the stack)
             code_seq_concat(&ret, gen_code_expr(*data.expr));
 
         //store val in corresponding spot in memory
             code_seq_add_to_end(&ret, code_swr(5, data.idu->attrs->offset_count, 6));
+
+            return ret;
         }
         
         case(call_stmt):{
@@ -129,31 +131,37 @@ code_seq gen_code_statement(stmt_t statement){
         }
 
         case(if_stmt):{
-        //Todo:
+            if_stmt_t data = statement.data.if_stmt;
+        //evaultate expression (storing value on top of the stack)
+
+
+            return ret;
         }
 
         case(while_stmt):{
         //Todo:
+            return ret;
         }
         
         case(read_stmt):{
         //Todo:
+            return ret;
         }
         
         case(print_stmt):{
         //Todo:
 
+            return ret;
         }
         
         case(block_stmt):{
-        //Todo:
             code_seq_concat(&ret, gen_code_block(*statement.data.block_stmt.block));
         }
 
         default: bail_with_error("Non-statement AST was provided as a statement");
     }
 
-    return ret;
+    return code_seq_empty();
 }
 
 code_seq gen_code_expr(expr_t expression){
@@ -161,7 +169,7 @@ code_seq gen_code_expr(expr_t expression){
 
     switch(expression.expr_kind){
         case(expr_bin):
-            //return gen_code_binary_op_expr(expression.data.binary);
+            return gen_code_binary_op_expr(expression.data.binary);
             break;
         case(expr_negated):
             return gen_code_ident(expression.data.ident, 0);
@@ -179,10 +187,7 @@ code_seq gen_code_expr(expr_t expression){
             bail_with_error("Unexpected expr_kind_e (%d) in gen_code_expr", expression.expr_kind);
 	        break;
     }
-//pop value from top of stack and store in $r6
-    code_seq_concat(&ret, code_seq_singleton(code_lwr(6, SP, 0)));
-    code_seq_concat(&ret, code_utils_deallocate_stack_space(1));
-    return ret;
+    return code_seq_empty();
 }
 
 
@@ -219,6 +224,10 @@ code_seq gen_code_ident(ident_t var, int sw){
         code_seq_concat(&ret, code_seq_singleton(code_neg(SP, 0, SP, 0)));
 
     return ret;
+}
+
+code_seq gen_code_binary_op_expr(binary_op_expr_t exp){
+
 }
 
 
