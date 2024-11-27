@@ -23,11 +23,14 @@ void gen_code_program(BOFFILE bf, block_t prog)
 }
 
 code_seq gen_code_block(block_t block){
+
+//Initalize code sequence for each scope
     code_seq ret;
+    ret = code_utils_save_registers_for_AR();
 //generate code from var decls
     code_seq_concat(&ret, gen_code_varDecls(block.var_decls));
 //same but for proc decls
-    code_seq_concat(&ret, gen_code_proc(block.proc_decls));
+    //code_seq_concat(&ret, gen_code_proc(block.proc_decls));
 
 //if statements exist within block, recursively parse stmts ast into code
     if(block.stmts.stmts_kind != empty_stmts_e){
@@ -44,7 +47,7 @@ code_seq gen_code_block(block_t block){
 code_seq gen_code_varDecls(var_decls_t varDecls){
     code_seq ret;
     var_decl_t* curr = varDecls.var_decls;
-
+ 
 //iterate through linked list of variable declarations to build code seq
     while(curr!=NULL){
         code_seq_concat(&ret, gen_code_identList(curr->ident_list));
@@ -58,16 +61,20 @@ code_seq gen_code_identList(ident_list_t idList){
     ident_t* curr = idList.start;
     
     while(curr!=NULL){
-    //for every declared variable, allocate space for it on runtime stack (within current AR)
-        code_seq_concat(&ret, code_utils_allocate_stack_space(1));
-        curr->next;
+    //for every declared variable, allocate space for it on runtime stack and initalize
+        code_seq temp = code_utils_allocate_stack_space(1);
+        code_seq_add_to_end(&temp, code_addi(SP, 0, 0));
+
+    //add to end and continue
+        code_seq_concat(&ret, temp);
+        curr= curr->next;
     }
 
     return ret;
 }
 
 code_seq gen_code_proc(proc_decls_t procedures){
-//Todo
+//Todo: (extra credit)
 }
 
 code_seq gen_code_statement(stmt_t statement){
@@ -76,8 +83,10 @@ code_seq gen_code_statement(stmt_t statement){
     switch(statement.stmt_kind){
         case(assign_stmt):{
         assign_stmt_t data = statement.data.assign_stmt;
-        //Todo: copy value to specified register (cpw)
-            //code_seq_concat(&ret, code_cpw())
+        //store partial lexical addr in $r3
+        ret = code_utils_compute_fp(3, data.idu->levelsOutward);
+        //evaultate expression and add to return seq
+        code_seq_concat(&ret, gen_code_expr(*data.expr));
         }
         
         case(call_stmt):{
@@ -107,6 +116,27 @@ code_seq gen_code_statement(stmt_t statement){
 
         default: bail_with_error("Non-statement AST was provided as a statement");
     }
+}
+
+code_seq gen_code_expr(expr_t expression){
+    code_seq ret;
+
+    switch(expression.expr_kind){
+        case(expr_bin):{
+
+        }
+        case(expr_negated):{
+            
+        }
+        case(expr_ident):{
+            
+        }
+        case(expr_number):{
+            
+        }
+        default:
+    }
+
 }
 
 

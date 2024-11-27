@@ -4,6 +4,7 @@
 #include "bof.h"
 #include "ast.h"
 #include "utilities.h"
+#include "regname.h"
 #include "code.h"
 #include "code_seq.h"
 #include "code_utils.h"
@@ -21,6 +22,7 @@ code_seq gen_code_statement(stmt_t statement);
 code_seq gen_code_varDecls(var_decl_t varDecls);
 code_seq gen_code_identList(ident_list_t idList);
 code_seq gen_code_proc(proc_decl_t procedures);
+code_seq gen_code_expr(expr_t expression);
 
 //ending functions
 extern void gen_code_makeHeader(BOFFILE bf, code_seq* mainSeq);
