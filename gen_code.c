@@ -25,7 +25,7 @@ void gen_code_output_seq(BOFFILE bf, code_seq cs)
 BOFHeader gen_code_makeHeader(code_seq* mainSeq)
 {
     BOFHeader ret;
-    strncpy(ret.magic, "FBF", 4); // idk
+    strcpy(ret.magic, "BO32"); 
     ret.text_start_address = 0;
     ret.text_length = code_seq_size(*mainSeq) * BYTES_PER_WORD;
     int dsa = MAX(ret.text_length, 1024) + BYTES_PER_WORD;
@@ -43,10 +43,16 @@ BOFHeader gen_code_makeHeader(code_seq* mainSeq)
 void gen_code_program(BOFFILE bf, block_t prog)
 {
     code_seq mainSeq = code_seq_empty();
-    //Todo: handle constant declarations (needs literal table module)
 
 //build code sequence recursively
     code_seq_concat(&mainSeq, gen_code_block(prog));
+//add exit and tail
+    
+    if(code_seq_is_empty(mainSeq))
+        mainSeq= code_seq_singleton(code_exit(0));
+    else
+        code_seq_add_to_end(&mainSeq, code_exit(0));
+    code_seq_concat(&mainSeq, code_seq_empty());
 
 //output
     gen_code_final_output(bf, &mainSeq);
@@ -68,6 +74,7 @@ code_seq gen_code_block(block_t block){
     //iterate through linked list of statements
         while(curr!=NULL){
             code_seq_concat(&ret, gen_code_statement(*curr));
+            curr = curr->next;
         }
     }
 
@@ -106,6 +113,8 @@ code_seq gen_code_identList(ident_list_t idList){
 
 code_seq gen_code_proc(proc_decls_t procedures){
 //Todo: (extra credit)
+
+    return code_seq_empty();
 }
 
 code_seq gen_code_statement(stmt_t statement){
@@ -140,6 +149,8 @@ code_seq gen_code_statement(stmt_t statement){
                 code_seq_concat(&thenSeq, gen_code_statement(*curr));
                 curr = curr->next;
             }
+            if(code_seq_is_empty(thenSeq))
+                bail_with_error("No body provided for if statement");
         //push truthy val to top of stack
             code_seq_concat(&ret, gen_code_cond(data.condition));
         //if 0, skip body
@@ -156,7 +167,8 @@ code_seq gen_code_statement(stmt_t statement){
                 code_seq_concat(&elseSeq, gen_code_statement(*curr));
             }
 
-            code_seq_concat(&ret, thenSeq);
+            if(!code_seq_is_empty(thenSeq))
+                code_seq_concat(&ret, elseSeq);
 
             return ret;
         }
@@ -206,12 +218,13 @@ code_seq gen_code_statement(stmt_t statement){
         case(print_stmt):{
         //Push expression value to the top of the stack and print
             code_seq_concat(&ret, gen_code_expr(statement.data.print_stmt.expr));
-            code_seq_add_to_end(&ret, code_pch(SP, 0));
+            code_seq_add_to_end(&ret, code_pint(SP, 0));
             return ret;
         }
         
         case(block_stmt):{
             code_seq_concat(&ret, gen_code_block(*statement.data.block_stmt.block));
+            return ret;
         }
 
         default: bail_with_error("Non-statement AST was provided as a statement");
@@ -248,8 +261,6 @@ code_seq gen_code_cond(condition_t cond){
 }
 
 code_seq gen_code_expr(expr_t expression){
-    code_seq ret;
-
     switch(expression.expr_kind){
         case(expr_bin):
             return gen_code_binary_op_expr(expression.data.binary);
@@ -301,7 +312,6 @@ code_seq gen_code_ident(ident_t var, int sw){
     assert((attrs = id_use_get_attrs(var.idu)) != NULL);
 
 //based on negative switch, push corresponding (+/-)value to the top of the stack
-    unsigned int offset_count =attrs->offset_count;
     code_seq_concat(&ret, code_seq_singleton(code_lwi(SP, 0, 7, attrs->offset_count)));
     if(!sw)
         code_seq_concat(&ret, code_seq_singleton(code_neg(SP, 0, SP, 0)));
