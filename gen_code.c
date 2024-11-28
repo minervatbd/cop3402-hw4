@@ -25,7 +25,7 @@ void gen_code_output_seq(BOFFILE bf, code_seq cs)
 BOFHeader gen_code_makeHeader(code_seq* mainSeq)
 {
     BOFHeader ret;
-    strncpy(ret.magic, "FBF", 4); // idk
+    strncpy(ret.magic, "BO32", 4); 
     ret.text_start_address = 0;
     ret.text_length = code_seq_size(*mainSeq) * BYTES_PER_WORD;
     int dsa = MAX(ret.text_length, 1024) + BYTES_PER_WORD;
