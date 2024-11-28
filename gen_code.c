@@ -7,6 +7,7 @@
 void gen_code_initialize()
 {
     literal_table_initialize();
+    printf("\nhii\n");
 }
 
 // Requires: bf if open for writing in binary
