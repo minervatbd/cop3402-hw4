@@ -25,7 +25,7 @@ void gen_code_output_seq(BOFFILE bf, code_seq cs)
 BOFHeader gen_code_makeHeader(code_seq* mainSeq)
 {
     BOFHeader ret;
-    strncpy(ret.magic, "BO32", 4); 
+    strcpy(ret.magic, "BO32"); 
     ret.text_start_address = 0;
     ret.text_length = code_seq_size(*mainSeq) * BYTES_PER_WORD;
     int dsa = MAX(ret.text_length, 1024) + BYTES_PER_WORD;
@@ -214,7 +214,7 @@ code_seq gen_code_statement(stmt_t statement){
         case(print_stmt):{
         //Push expression value to the top of the stack and print
             code_seq_concat(&ret, gen_code_expr(statement.data.print_stmt.expr));
-            code_seq_add_to_end(&ret, code_pch(SP, 0));
+            code_seq_add_to_end(&ret, code_pint(SP, 0));
             return ret;
         }
         
