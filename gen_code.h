@@ -3,6 +3,7 @@
 
 #include "bof.h"
 #include "ast.h"
+#include "spl.tab.h"
 #include "utilities.h"
 #include "regname.h"
 #include "code.h"
@@ -26,8 +27,11 @@ extern code_seq gen_code_identList(ident_list_t idList);
 extern code_seq gen_code_proc(proc_decls_t procedures);
 extern code_seq gen_code_expr(expr_t expression);
 
-//TODO: define
+//expressions
 extern code_seq gen_code_binary_op_expr(binary_op_expr_t exp);
+extern code_seq gen_code_op(token_t operation);
+extern code_seq gen_code_rel_op(token_t operation);
+extern code_seq gen_code_arith_op(token_t operation);
 extern code_seq gen_code_ident(ident_t var, int sw);
 extern code_seq gen_code_number(number_t number);
 

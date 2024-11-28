@@ -133,7 +133,11 @@ code_seq gen_code_statement(stmt_t statement){
         case(if_stmt):{
             if_stmt_t data = statement.data.if_stmt;
         //evaultate expression (storing value on top of the stack)
+            if(data.condition.cond_kind == ck_db){
+                
+            } else{
 
+            }
 
             return ret;
         }
@@ -227,7 +231,75 @@ code_seq gen_code_ident(ident_t var, int sw){
 }
 
 code_seq gen_code_binary_op_expr(binary_op_expr_t exp){
+    // put the values of the two subexpressions on the stack
+    code_seq ret = gen_code_expr(*(exp.expr1));
+    code_seq_concat(&ret, gen_code_expr(*(exp.expr2)));
 
+    // do the operation, putting the result on the stack
+    code_seq_concat(&ret, gen_code_op(exp.arith_op));
+    return ret;
+}
+
+code_seq gen_code_op(token_t operation){
+    switch(operation.code){
+        case(eqsym | neqsym | ltsym | leqsym | gtsym | geqsym):
+            return gen_code_rel_op(operation);
+            break;
+        case(plussym | minussym | multsym | divsym):
+            return gen_code_arith_op(operation);
+	        break;
+
+        default:
+	        bail_with_error("Unknown token code (%d) was provided.", operation.code);
+	        break;
+    }
+
+    return code_seq_empty();
+}
+
+code_seq gen_code_rel_op(token_t operation){
+
+}
+
+code_seq gen_code_arith_op(token_t operation){
+    code_seq ret;
+//store operands in $r4/r5
+    code_seq_add_to_end(&ret, code_lwr(4, SP, -1));
+    code_seq_add_to_end(&ret, code_lwr(5, SP, 0));
+    code_seq_concat(&ret, code_utils_deallocate_stack_space(2));
+
+
+//consume operands and store result on top of the stack
+    switch (operation.code) {
+        case plussym:
+            code_seq_concat(&ret, code_utils_allocate_stack_space(1));
+	        code_seq_add_to_end(&ret, code_add(SP, 0, 4, 0));
+            code_seq_add_to_end(&ret, code_add(SP, 0, 5, 0));
+	        break;
+        
+        case minussym:
+	        code_seq_concat(&ret, code_utils_allocate_stack_space(1));
+	        code_seq_add_to_end(&ret, code_sub(SP, 0, 4, 0));
+            code_seq_add_to_end(&ret, code_sub(SP, 0, 5, 0));
+	        break;
+
+        case multsym:
+	        code_seq_concat(&ret, code_utils_allocate_stack_space(1));
+	        code_seq_add_to_end(&ret, code_add(SP, 0, 4, 0));
+            code_seq_add_to_end(&ret, code_mul(5, 0));
+            break;
+
+        case divsym:
+	        code_seq_concat(&ret, code_utils_allocate_stack_space(1));
+	        code_seq_add_to_end(&ret, code_add(SP, 0, 4, 0));
+            code_seq_add_to_end(&ret, code_div(5, 0));
+            break;
+
+        default:
+	    bail_with_error("Unexpected arithOp (%d) was provided", operation.code);
+	    break;
+    }
+    return ret;
 }
 
 
