@@ -47,7 +47,11 @@ void gen_code_program(BOFFILE bf, block_t prog)
 //build code sequence recursively
     code_seq_concat(&mainSeq, gen_code_block(prog));
 //add exit and tail
-    code_seq_add_to_end(&mainSeq, code_exit(0));
+    
+    if(code_seq_is_empty(mainSeq))
+        mainSeq= code_seq_singleton(code_exit(0));
+    else
+        code_seq_add_to_end(&mainSeq, code_exit(0));
     code_seq_concat(&mainSeq, code_seq_empty());
 
 //output
