@@ -46,6 +46,9 @@ void gen_code_program(BOFFILE bf, block_t prog)
 
 //build code sequence recursively
     code_seq_concat(&mainSeq, gen_code_block(prog));
+//add exit and tail
+    code_seq_add_to_end(&mainSeq, code_exit(0));
+    code_seq_concat(&mainSeq, code_seq_empty());
 
 //output
     gen_code_final_output(bf, &mainSeq);
@@ -280,7 +283,6 @@ code_seq gen_code_expr(expr_t expression){
 
 void gen_code_final_output(BOFFILE bf, code_seq* mainSeq)
 {
-    printf("\ntesting\n");
     BOFHeader bfh = gen_code_makeHeader(mainSeq);
     //Todo: construct bof header from finished code sequence
     bof_write_header(bf, bfh);
