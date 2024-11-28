@@ -7,7 +7,6 @@
 void gen_code_initialize()
 {
     literal_table_initialize();
-    printf("\nhii\n");
 }
 
 // Requires: bf if open for writing in binary
@@ -143,6 +142,8 @@ code_seq gen_code_statement(stmt_t statement){
                 code_seq_concat(&thenSeq, gen_code_statement(*curr));
                 curr = curr->next;
             }
+            if(code_seq_is_empty(thenSeq))
+                bail_with_error("No body provided for if statement");
         //push truthy val to top of stack
             code_seq_concat(&ret, gen_code_cond(data.condition));
         //if 0, skip body
@@ -159,7 +160,8 @@ code_seq gen_code_statement(stmt_t statement){
                 code_seq_concat(&elseSeq, gen_code_statement(*curr));
             }
 
-            code_seq_concat(&ret, thenSeq);
+            if(!code_seq_is_empty(thenSeq))
+                code_seq_concat(&ret, elseSeq);
 
             return ret;
         }
@@ -278,6 +280,7 @@ code_seq gen_code_expr(expr_t expression){
 
 void gen_code_final_output(BOFFILE bf, code_seq* mainSeq)
 {
+    printf("\ntesting\n");
     BOFHeader bfh = gen_code_makeHeader(mainSeq);
     //Todo: construct bof header from finished code sequence
     bof_write_header(bf, bfh);
