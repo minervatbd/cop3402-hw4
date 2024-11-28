@@ -7,6 +7,7 @@
 #include "utilities.h"
 #include "regname.h"
 #include "code.h"
+#include "limits.h"
 #include "code_seq.h"
 #include "code_utils.h"
 #include "literal_table.h"

@@ -106,6 +106,8 @@ code_seq gen_code_identList(ident_list_t idList){
 
 code_seq gen_code_proc(proc_decls_t procedures){
 //Todo: (extra credit)
+
+    return code_seq_empty();
 }
 
 code_seq gen_code_statement(stmt_t statement){
@@ -248,8 +250,6 @@ code_seq gen_code_cond(condition_t cond){
 }
 
 code_seq gen_code_expr(expr_t expression){
-    code_seq ret;
-
     switch(expression.expr_kind){
         case(expr_bin):
             return gen_code_binary_op_expr(expression.data.binary);
@@ -301,7 +301,6 @@ code_seq gen_code_ident(ident_t var, int sw){
     assert((attrs = id_use_get_attrs(var.idu)) != NULL);
 
 //based on negative switch, push corresponding (+/-)value to the top of the stack
-    unsigned int offset_count =attrs->offset_count;
     code_seq_concat(&ret, code_seq_singleton(code_lwi(SP, 0, 7, attrs->offset_count)));
     if(!sw)
         code_seq_concat(&ret, code_seq_singleton(code_neg(SP, 0, SP, 0)));
