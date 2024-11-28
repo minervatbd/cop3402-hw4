@@ -456,6 +456,6 @@ code_seq gen_code_save_operands(){
 void gen_code_output_literals(BOFFILE bof)
 {
     // flip this bool for forwards/backwards output
-    int backwards = 0;
+    int backwards = 1;
     literal_table_output(bof, backwards);
 }

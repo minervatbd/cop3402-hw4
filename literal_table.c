@@ -18,7 +18,6 @@ literal *iteration_next;
 
 static void literal_table_valid()
 {
-    return;
     int empty = literal_table_empty();
     if (empty != (first == NULL) || empty != (last == NULL))
         bail_with_error("Literal table invalid");
