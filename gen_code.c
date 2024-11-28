@@ -132,14 +132,56 @@ code_seq gen_code_statement(stmt_t statement){
 
         case(if_stmt):{
             if_stmt_t data = statement.data.if_stmt;
-        //evaultate expression (storing value on top of the stack)
-        
+
+            code_seq thenSeq = code_seq_empty(); 
+            stmt_t* curr= data.then_stmts->stmt_list.start;
+            //iterate through linked list of statements
+            while(curr!=NULL){
+                code_seq_concat(&thenSeq, gen_code_statement(*curr));
+                curr = curr->next;
+            }
+        //push truthy val to top of stack
+            code_seq_concat(&ret, gen_code_cond(data.condition));
+        //if 0, skip body
+            int len = code_seq_size(thenSeq);
+            code_seq_concat(&ret, code_utils_allocate_stack_space(1));
+            code_seq_add_to_end(&ret, code_addi(SP, 0, 0));
+            code_seq_add_to_end(&ret, code_beq(SP, -1, len));
+            code_seq_concat(&ret, code_utils_deallocate_stack_space(1));
+            code_seq_concat(&ret, thenSeq);
+
+            code_seq elseSeq = code_seq_empty(); 
+            curr = data.else_stmts->stmt_list.start;
+            while(curr != NULL){
+                code_seq_concat(&elseSeq, gen_code_statement(*curr));
+            }
+
+            code_seq_concat(&ret, thenSeq);
 
             return ret;
         }
 
         case(while_stmt):{
-        //Todo:
+            while_stmt_t data = statement.data.while_stmt;
+            stmt_t* curr = data.body->stmt_list.start;
+            code_seq whileSeq = code_seq_empty();
+
+            while(curr != NULL){
+                code_seq_concat(&whileSeq, gen_code_statement(*curr));
+                curr = curr->next;
+            }
+        //for jrel at end of while block and main condition
+            int len = code_seq_size(whileSeq);
+            int jumpBack = len * -1;
+            code_seq_add_to_end(&whileSeq, code_jrel(jumpBack));
+
+        //push truthy val to top of stack and jump forward if false
+            code_seq_concat(&ret, gen_code_cond(data.condition));
+            code_seq_concat(&ret, code_utils_allocate_stack_space(1));
+            code_seq_add_to_end(&ret, code_addi(SP, 0, 0));
+            code_seq_add_to_end(&ret, code_bne(SP, -1, len));
+            code_seq_concat(&ret, code_utils_deallocate_stack_space(1));
+            code_seq_concat(&ret, whileSeq);
             return ret;
         }
         
@@ -162,8 +204,9 @@ code_seq gen_code_statement(stmt_t statement){
         }
         
         case(print_stmt):{
-        //Todo:
-
+        //Push expression value to the top of the stack and print
+            code_seq_concat(&ret, gen_code_expr(statement.data.print_stmt.expr));
+            code_seq_add_to_end(&ret, code_pch(SP, 0));
             return ret;
         }
         
@@ -175,6 +218,33 @@ code_seq gen_code_statement(stmt_t statement){
     }
 
     return code_seq_empty();
+}
+
+code_seq gen_code_cond(condition_t cond){
+    code_seq ret;
+//evaultate condition expression (storing value on top of the stack)
+        if(cond.cond_kind == ck_db){
+            db_condition_t condData = cond.data.db_cond;
+                
+        //evaluate two sub-expressions and push them both to the top of the stack
+            code_seq_concat(&ret, gen_code_expr(condData.dividend));
+            code_seq_concat(&ret, gen_code_expr(condData.divisor));
+
+        //move second expression (divisor) to $r4
+            code_seq_add_to_end(&ret, code_lwr(4, SP, 0));
+        //readjust SP
+            code_seq_concat(&ret, code_utils_deallocate_stack_space(1));
+        
+        //compute dividend % divisor
+            code_seq_add_to_end(&ret, code_div(SP, 0));
+            code_seq_add_to_end(&ret, code_cfhi(SP, 0));
+            code_seq_add_to_end(&ret, code_nori(SP, 0, 0));
+                
+        } else{
+            rel_op_condition_t condData = cond.data.rel_op_cond;
+            code_seq_concat(&ret, gen_code_rel_op(condData.rel_op, condData));
+        }
+    return ret;
 }
 
 code_seq gen_code_expr(expr_t expression){
@@ -251,9 +321,9 @@ code_seq gen_code_binary_op_expr(binary_op_expr_t exp){
 
 code_seq gen_code_op(token_t operation, binary_op_expr_t exp){
     switch(operation.code){
-        case(eqsym | neqsym | ltsym | leqsym | gtsym | geqsym):
-            return gen_code_rel_op(operation, exp); 
-            break;
+        //case(eqsym | neqsym | ltsym | leqsym | gtsym | geqsym):
+            //return gen_code_rel_op(operation, exp); 
+            //break;
         case(plussym | minussym | multsym | divsym):
             return gen_code_arith_op(operation);
 	        break;
@@ -268,86 +338,62 @@ code_seq gen_code_op(token_t operation, binary_op_expr_t exp){
 
 
 
-/*code_seq gen_code_rel_op(token_t operation, binary_op_expr_t exp){
-    code_seq ret = gen_code_save_operands();
+code_seq gen_code_rel_op(token_t operation, rel_op_condition_t exp){
+    code_seq ret;  
+    //push both expression values to top of stack
+    code_seq_concat(&ret, gen_code_expr(exp.expr1));
+    code_seq_concat(&ret, gen_code_expr(exp.expr2));
 
+    //move first expression to $r4
+    code_seq_add_to_end(&ret, code_lwr(4, SP, 0));
+    //readjust SP
+    code_seq_concat(&ret, code_utils_deallocate_stack_space(1));
+
+//store truthy value (1/0) on top of stack based on op code
     switch (operation.code) {
         case eqsym: {
-            if (operation. == float_te) {
-	            code_seq_add_to_end(&ret,code_bfeq(V0, AT, 2));
-	        } else {
-	            code_seq_add_to_end(&ret, code_beq(V0, AT, 2));
-	        }
+            code_seq_add_to_end(&ret, code_xor(SP, 0, 4, 0));
+            code_seq_add_to_end(&ret, code_addi(7, 0, 1));
+            code_seq_add_to_end(&ret, code_xor(SP, 0, 7, 0));
 	        break;
         }
 	
         case neqsym:{
-            if (typ == float_te) {
-                code_seq_add_to_end(&ret, code_bfne(V0, AT, 2));
-            } else {
-                code_seq_add_to_end(&ret, code_bne(V0, AT, 2));
-            }
+            code_seq_add_to_end(&ret, code_xor(SP,0, 4, 0));
             break;
         }
 
         case ltsym:{
-            if (typ == float_te) {
-                code_seq_add_to_end(&ret, code_fsub(V0, AT, V0));
-                code_seq_add_to_end(&ret, code_bfltz(V0, 2));
-            } else {
-                code_seq_add_to_end(&ret, code_sub(V0, AT, V0));
-                code_seq_add_to_end(&ret, code_bltz(V0, 2));
-            }
+        //todo
+            code_seq_concat(&ret, code_seq_empty());
             break;
         }
 	
-    case leqsym:{
-        if (typ == float_te) {
-            code_seq_add_to_end(&ret, code_fsub(V0, AT, V0));
-            code_seq_add_to_end(&ret, code_bflez(V0, 2));
-        } else {
-            code_seq_add_to_end(&ret, code_sub(V0, AT, V0));
-            code_seq_add_to_end(&ret, code_blez(V0, 2));
+        case leqsym:{
+        //todo
+            code_seq_concat(&ret, code_seq_empty());
+            break;
         }
-        break;
-    }
-	
-    case gtsym:{
-    if (typ == float_te) {
-            code_seq_add_to_end(&ret, code_fsub(V0, AT, V0));
-            code_seq_add_to_end(&ret, code_bfgtz(V0, 2));
-        } else {
-            code_seq_add_to_end(&ret, code_sub(V0, AT, V0));
-            code_seq_add_to_end(&ret, code_bgtz(V0, 2));
+        
+        case gtsym:{
+        //todo
+            code_seq_concat(&ret, code_seq_empty());
+            break;
         }
-        break;
-    }
-	
-    case geqsym:{
-        if (typ == float_te) {
-            code_seq_add_to_end(&ret, code_fsub(V0, AT, V0));
-            code_seq_add_to_end(&ret, code_bfgez(V0, 2));
-        } else {
-            code_seq_add_to_end(&ret, code_sub(V0, AT, V0));
-            code_seq_add_to_end(&ret, code_bgez(V0, 2));
+        
+        case geqsym:{
+        //todo
+            code_seq_concat(&ret, code_seq_empty());
+            break;
         }
-        break;
-    }
 
-    default:
-	    bail_with_error("Unknown token code (%d) provided in gen_code_rel_op",
-			operation.code);
-	    break;
+        default:
+            bail_with_error("Unknown token code (%d) provided in gen_code_rel_op",
+                operation.code);
+            break;
     }
-
-    // rest of the code for the comparisons
-    code_seq_add_to_end(&ret, code_add(0, 0, AT)); // put false in AT
-    code_seq_add_to_end(&ret, code_beq(0, 0, 1)); // skip next instr
-    code_seq_add_to_end(&ret, code_addi(0, AT, 1)); // put true in AT
-    code_seq_concat(&ret, code_push_reg_on_stack(AT, bool_te));    
-    
     return ret;
-}*/
+}
 
 code_seq gen_code_arith_op(token_t operation){
     code_seq ret = gen_code_save_operands();
