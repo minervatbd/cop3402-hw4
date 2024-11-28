@@ -214,6 +214,7 @@ code_seq gen_code_statement(stmt_t statement){
         
         case(block_stmt):{
             code_seq_concat(&ret, gen_code_block(*statement.data.block_stmt.block));
+            return ret;
         }
 
         default: bail_with_error("Non-statement AST was provided as a statement");
