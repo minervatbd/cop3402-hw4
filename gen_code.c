@@ -43,7 +43,6 @@ BOFHeader gen_code_makeHeader(code_seq* mainSeq)
 void gen_code_program(BOFFILE bf, block_t prog)
 {
     code_seq mainSeq = code_seq_empty();
-    //Todo: handle constant declarations (needs literal table module)
 
 //build code sequence recursively
     code_seq_concat(&mainSeq, gen_code_block(prog));
@@ -68,6 +67,7 @@ code_seq gen_code_block(block_t block){
     //iterate through linked list of statements
         while(curr!=NULL){
             code_seq_concat(&ret, gen_code_statement(*curr));
+            curr = curr->next;
         }
     }
 
