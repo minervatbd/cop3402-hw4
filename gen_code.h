@@ -29,8 +29,9 @@ extern code_seq gen_code_expr(expr_t expression);
 
 //expressions
 extern code_seq gen_code_binary_op_expr(binary_op_expr_t exp);
-extern code_seq gen_code_op(token_t operation);
-extern code_seq gen_code_rel_op(token_t operation);
+extern code_seq gen_code_op(token_t operation, binary_op_expr_t exp);
+extern code_seq gen_code_save_operands();
+extern code_seq gen_code_rel_op(token_t operation, binary_op_expr_t exp);
 extern code_seq gen_code_arith_op(token_t operation);
 extern code_seq gen_code_ident(ident_t var, int sw);
 extern code_seq gen_code_number(number_t number);

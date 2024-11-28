@@ -133,11 +133,7 @@ code_seq gen_code_statement(stmt_t statement){
         case(if_stmt):{
             if_stmt_t data = statement.data.if_stmt;
         //evaultate expression (storing value on top of the stack)
-            if(data.condition.cond_kind == ck_db){
-                
-            } else{
-
-            }
+        
 
             return ret;
         }
@@ -148,7 +144,20 @@ code_seq gen_code_statement(stmt_t statement){
         }
         
         case(read_stmt):{
-        //Todo:
+            read_stmt_t data = statement.data.read_stmt;
+            //read number and push onto stack
+            code_seq_concat(&ret, code_utils_allocate_stack_space(1));
+            code_seq_add_to_end(&ret, code_rch(SP, 0));
+            // store partial lexical address in $r5
+            assert(data.idu != NULL);
+            code_seq_concat(&ret, code_utils_compute_fp(5, data.idu->levelsOutward));
+
+            //store read value in corresponding namespace
+            assert(id_use_get_attrs(data.idu) != NULL);
+            unsigned int offset_count = id_use_get_attrs(data.idu)->offset_count;
+            assert(offset_count <= USHRT_MAX);
+            code_seq_add_to_end(&ret, code_lwi(5, offset_count, SP, 0));
+            code_seq_concat(&ret, code_utils_deallocate_stack_space(1));
             return ret;
         }
         
@@ -236,14 +245,14 @@ code_seq gen_code_binary_op_expr(binary_op_expr_t exp){
     code_seq_concat(&ret, gen_code_expr(*(exp.expr2)));
 
     // do the operation, putting the result on the stack
-    code_seq_concat(&ret, gen_code_op(exp.arith_op));
+    code_seq_concat(&ret, gen_code_op(exp.arith_op, exp));
     return ret;
 }
 
-code_seq gen_code_op(token_t operation){
+code_seq gen_code_op(token_t operation, binary_op_expr_t exp){
     switch(operation.code){
         case(eqsym | neqsym | ltsym | leqsym | gtsym | geqsym):
-            return gen_code_rel_op(operation);
+            return gen_code_rel_op(operation, exp); 
             break;
         case(plussym | minussym | multsym | divsym):
             return gen_code_arith_op(operation);
@@ -257,17 +266,91 @@ code_seq gen_code_op(token_t operation){
     return code_seq_empty();
 }
 
-code_seq gen_code_rel_op(token_t operation){
 
-}
+
+/*code_seq gen_code_rel_op(token_t operation, binary_op_expr_t exp){
+    code_seq ret = gen_code_save_operands();
+
+    switch (operation.code) {
+        case eqsym: {
+            if (operation. == float_te) {
+	            code_seq_add_to_end(&ret,code_bfeq(V0, AT, 2));
+	        } else {
+	            code_seq_add_to_end(&ret, code_beq(V0, AT, 2));
+	        }
+	        break;
+        }
+	
+        case neqsym:{
+            if (typ == float_te) {
+                code_seq_add_to_end(&ret, code_bfne(V0, AT, 2));
+            } else {
+                code_seq_add_to_end(&ret, code_bne(V0, AT, 2));
+            }
+            break;
+        }
+
+        case ltsym:{
+            if (typ == float_te) {
+                code_seq_add_to_end(&ret, code_fsub(V0, AT, V0));
+                code_seq_add_to_end(&ret, code_bfltz(V0, 2));
+            } else {
+                code_seq_add_to_end(&ret, code_sub(V0, AT, V0));
+                code_seq_add_to_end(&ret, code_bltz(V0, 2));
+            }
+            break;
+        }
+	
+    case leqsym:{
+        if (typ == float_te) {
+            code_seq_add_to_end(&ret, code_fsub(V0, AT, V0));
+            code_seq_add_to_end(&ret, code_bflez(V0, 2));
+        } else {
+            code_seq_add_to_end(&ret, code_sub(V0, AT, V0));
+            code_seq_add_to_end(&ret, code_blez(V0, 2));
+        }
+        break;
+    }
+	
+    case gtsym:{
+    if (typ == float_te) {
+            code_seq_add_to_end(&ret, code_fsub(V0, AT, V0));
+            code_seq_add_to_end(&ret, code_bfgtz(V0, 2));
+        } else {
+            code_seq_add_to_end(&ret, code_sub(V0, AT, V0));
+            code_seq_add_to_end(&ret, code_bgtz(V0, 2));
+        }
+        break;
+    }
+	
+    case geqsym:{
+        if (typ == float_te) {
+            code_seq_add_to_end(&ret, code_fsub(V0, AT, V0));
+            code_seq_add_to_end(&ret, code_bfgez(V0, 2));
+        } else {
+            code_seq_add_to_end(&ret, code_sub(V0, AT, V0));
+            code_seq_add_to_end(&ret, code_bgez(V0, 2));
+        }
+        break;
+    }
+
+    default:
+	    bail_with_error("Unknown token code (%d) provided in gen_code_rel_op",
+			operation.code);
+	    break;
+    }
+
+    // rest of the code for the comparisons
+    code_seq_add_to_end(&ret, code_add(0, 0, AT)); // put false in AT
+    code_seq_add_to_end(&ret, code_beq(0, 0, 1)); // skip next instr
+    code_seq_add_to_end(&ret, code_addi(0, AT, 1)); // put true in AT
+    code_seq_concat(&ret, code_push_reg_on_stack(AT, bool_te));    
+    
+    return ret;
+}*/
 
 code_seq gen_code_arith_op(token_t operation){
-    code_seq ret;
-//store operands in $r4/r5
-    code_seq_add_to_end(&ret, code_lwr(4, SP, -1));
-    code_seq_add_to_end(&ret, code_lwr(5, SP, 0));
-    code_seq_concat(&ret, code_utils_deallocate_stack_space(2));
-
+    code_seq ret = gen_code_save_operands();
 
 //consume operands and store result on top of the stack
     switch (operation.code) {
@@ -302,6 +385,16 @@ code_seq gen_code_arith_op(token_t operation){
     return ret;
 }
 
+code_seq gen_code_save_operands(){
+    code_seq ret;
+    //store operands (first two spots in stack) in $r4/r5
+    code_seq_add_to_end(&ret, code_lwr(4, SP, -1));
+    code_seq_add_to_end(&ret, code_lwr(5, SP, 0));
+    //readjust SP
+    code_seq_concat(&ret, code_utils_deallocate_stack_space(2));
+
+    return ret;
+}
 
 // call this for literals at the end of the final output
 void gen_code_output_literals(BOFFILE bof)
